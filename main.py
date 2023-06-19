@@ -22,9 +22,6 @@ def verify_subgrid(subgrid)-> bool:
     # flatten the subgrid into line and verify it
     return verify_line([value for row in subgrid for value in row])
 
-
-
-
 def process(threads, request_queue, response_queue, id):
     responses = {}
 
@@ -55,6 +52,7 @@ def process(threads, request_queue, response_queue, id):
     if total_errors == 0:
         final += "0 erros encontrados."
         response_queue.put(final)
+        response_queue.put("END")
         return
     else:
         final+= f"{total_errors} erros encontrados ("
@@ -64,8 +62,6 @@ def process(threads, request_queue, response_queue, id):
         final += ")"
         response_queue.put(final)
     response_queue.put("END")
-
-
 
 TABLES = SudokuParser(sys.argv[1]).getTables()
 NUM_PROCESS = int(sys.argv[2])
@@ -94,7 +90,6 @@ while end < NUM_PROCESS:
         end += 1
     else:
         print(response)
-
 
 for p in processes:
     p.join()
