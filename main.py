@@ -51,19 +51,18 @@ def process(threads, request_queue, response_queue, id):
 
 
     final = f"Processo {id}: "
-    for k, v in responses.items():
-        print(k, v)
-        if v.length() == 0:
-            del responses[k]
-            continue
-    if len(responses.keys()) == 0:
+    total_errors = sum([len(x) for x in responses.values() if len(x) > 0])
+    if total_errors == 0:
         final += "0 erros encontrados."
         response_queue.put(final)
         return
     else:
-        #summ all errors and plot them.
-        pass
-    
+        final+= f"{total_errors} erros encontrados ("
+        for table, errors in responses.items():
+            if len(errors) > 0:
+                final += f"{table}: {', '.join(errors)}; "
+        final += ")"
+        response_queue.put(final)
     response_queue.put("END")
 
 
