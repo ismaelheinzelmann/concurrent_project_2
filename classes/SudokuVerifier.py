@@ -1,0 +1,2 @@
+class SudokuVerifier:
+    @staticmethod

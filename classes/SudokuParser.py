@@ -1,6 +1,4 @@
 from classes.Table import Table
-
-
 class SudokuParser:
     def __init__(self, filename: str):
         self.tables = []
