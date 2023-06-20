@@ -40,7 +40,7 @@ def process(threads, request_queue, response_queue, id, pLock)-> bool:
     #process should create threads and wait for them to finish
     #lock for responses and lock for request
     responses = {}
-    responses_lock = Lock()
+    responses_lock = tLock()
     executor = ThreadPoolExecutor(max_workers=threads)
 
     running_table = -1
