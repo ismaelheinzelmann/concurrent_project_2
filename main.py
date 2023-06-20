@@ -1,19 +1,15 @@
 from classes.SudokuParser import SudokuParser
-from multiprocessing import Process, Queue
-from threading import Thread, Lock
+from multiprocessing import Process, Queue, Lock
+from threading import Lock as tLock
+from concurrent.futures import ThreadPoolExecutor
 import sys
-# 9 linhas
-# 9 colunas
-# 9 subgrids
-# 27 verificações por table
-# n = numero de tabelas
 
 def verify_line(line)-> bool:
     for value in line:
         if value < 1 or value > 9:
             return False
     return len(line) == 9 and sum(line) == sum(set(line))
-    
+
 def verify_column(column)-> bool:
     # transpose the column into line and verify it
     return verify_line([value for (value,) in zip(*[column])])
@@ -22,46 +18,62 @@ def verify_subgrid(subgrid)-> bool:
     # flatten the subgrid into line and verify it
     return verify_line([value for row in subgrid for value in row])
 
-def process(threads, request_queue, response_queue, id):
+def thread_process(responses, response_lock, table, request, index)-> str:
+    valid = bool()
+    response = ""
+    if request == "line":
+        response = f"L{index}"
+        valid = verify_line(TABLES[table - 1].getLine(int(index)))
+    elif request == "column":
+        response = f"C{index}"
+        valid = verify_column(TABLES[table - 1].getColumn(int(index)))
+    elif request == "subgrid":
+        response = f"R{index}"
+        valid = verify_subgrid(TABLES[table - 1].getBlock(int(index)))
+    if not valid:
+        response_lock.acquire()
+        responses[f"T{table}"].append(response)
+        response_lock.release()
+
+
+def process(threads, request_queue, response_queue, id, pLock)-> bool:
+    #process should create threads and wait for them to finish
+    #lock for responses and lock for request
     responses = {}
+    responses_lock = Lock()
+    executor = ThreadPoolExecutor(max_workers=threads)
 
     running_table = -1
-    response = ""
-    while not request_queue.empty():
-        request = request_queue.get().split("|")
+    while True:
+        request = str()
+        with pLock:
+            if request_queue.empty():
+                break
+            request = request_queue.get().split("|")
         if running_table != int(request[0]):
             running_table = int(request[0])
             responses[f"T{running_table}"] = []
             response_queue.put(f"Processo {id}: resolvendo quebra-cabeças {running_table}")
-        valid = bool()
-        if request[1] == "line":
-            response = f"L{request[2]}"
-            valid = verify_line(TABLES[running_table - 1].getLine(int(request[2])))
-        elif request[1] == "column":
-            response = f"C{request[2]}"
-            valid = verify_column(TABLES[running_table - 1].getColumn(int(request[2])))
-        elif request[1] == "subgrid":
-            response = f"R{request[2]}"
-            valid = verify_subgrid(TABLES[running_table - 1].getBlock(int(request[2])))
-        if not valid:      
-            responses[f"T{running_table}"].append(response)
+        #submit
+        executor.submit(thread_process, responses, responses_lock, int(request[0]), request[1], int(request[2]))
 
-
+    executor.shutdown(wait=True)
     final = f"Processo {id}: "
     total_errors = sum([len(x) for x in responses.values() if len(x) > 0])
     if total_errors == 0:
         final += "0 erros encontrados."
         response_queue.put(final)
-        response_queue.put("END")
-        return
     else:
         final+= f"{total_errors} erros encontrados ("
+        final_append = []
         for table, errors in responses.items():
             if len(errors) > 0:
-                final += f"{table}: {', '.join(errors)}; "
+                final_append.append(f"{table}: {', '.join(errors)}")
+        final += "; ".join(final_append)
         final += ")"
         response_queue.put(final)
     response_queue.put("END")
+    return
 
 TABLES = SudokuParser(sys.argv[1]).getTables()
 NUM_PROCESS = int(sys.argv[2])
@@ -69,8 +81,9 @@ THREADS_PER_PROCESS = int(sys.argv[3])
 N_TABLES = len(TABLES)
 
 request_queue = Queue()
+request_queue_lock = Lock()
 response_queue = Queue()
-processes = [Process(target=process, args = [THREADS_PER_PROCESS, request_queue, response_queue, i]) for i in range(1, NUM_PROCESS + 1)]
+processes = [Process(target=process, args = [THREADS_PER_PROCESS, request_queue, response_queue, i, request_queue_lock]) for i in range(1, NUM_PROCESS + 1)]
 # request model: "table|line or column or subgrid|number"
 for table in range(1, N_TABLES + 1):
     for line in range(1, 10):
