@@ -6,12 +6,12 @@ class Table:
         self.lines = lines
 
     # Linhas e colunas vão de 1 a 9
-    def getColumn(self, column: int) -> List[int]:
+    def get_column(self, column: int) -> List[int]:
         if column > len(self.lines[0]) or column < 0:
             raise Exception("Coluna deve ser maior que 0 e menor que 10")
         return [line[column - 1] for line in self.lines]
 
-    def getLine(self, line: int) -> List[int]:
+    def get_line(self, line: int) -> List[int]:
         if line > len(self.lines) or line < 0:
             raise Exception("Linha deve ser maior que 0 e menor que 10")
         return self.lines[line - 1]
@@ -20,7 +20,7 @@ class Table:
     # 1 2 3
     # 4 5 6
     # 7 8 9
-    def getBlock(self, block: int) -> List[List[int]]:
+    def get_block(self, block: int) -> List[List[int]]:
         if block > 9 or block < 0:
             raise Exception("Bloco deve ser maior que 0 e menor que 10")
         start_x = (block - 1) % 3 * 3
@@ -41,13 +41,13 @@ if __name__ == '__main__':
             [2, 8, 7, 4, 1, 9, 6, 3, 5],
             [3, 4, 5, 2, 8, 6, 1, 7, 9]]
     game = Table(test)
-    print(game.getBlock(1))
-    print(game.getBlock(2))
-    print(game.getBlock(3))
-    print(game.getBlock(4))
-    print(game.getBlock(5))
-    print(game.getBlock(6))
-    print(game.getBlock(7))
-    print(game.getBlock(8))
-    print(game.getBlock(9))
+    print(game.get_block(1))
+    print(game.get_block(2))
+    print(game.get_block(3))
+    print(game.get_block(4))
+    print(game.get_block(5))
+    print(game.get_block(6))
+    print(game.get_block(7))
+    print(game.get_block(8))
+    print(game.get_block(9))
 
