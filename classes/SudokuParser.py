@@ -1,12 +1,18 @@
 from classes.Table import Table
+
+
 class SudokuParser:
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, start, end):
         self.tables = []
-        with(open(filename, 'r')) as file:
+        with (open(filename, "r")) as file:
             tableLines = []
             lines = file.readlines()
-            lines = list(filter(lambda x: x != '\n', lines))
-            lines = [x.replace('\n','') for x in lines]
+            try:
+                lines = lines[start:end]
+            except:
+                lines = lines[start:]
+            lines = list(filter(lambda x: x != "\n", lines))
+            lines = [x.replace("\n", "") for x in lines]
 
             for line in lines:
                 tableLines.append([int(x) for x in line])
