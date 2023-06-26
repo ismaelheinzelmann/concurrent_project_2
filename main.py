@@ -13,20 +13,7 @@ def clear_errors(errors):
         for thread in table:
             thread.clear()
 
-
-def thread_process(
-    id,
-    id_thread,
-    start,
-    threads_queue,
-    errors,
-    tables,
-    tables_n,
-    semaphores,
-    lock,
-    already_lock,
-    already,
-):
+def thread_process(id, id_thread,start, threads_queue, errors, tables, tables_n, semaphores, lock, already_lock, already):
     while True:
         request = threads_queue.get()
         if request == (-1, -1, -1):
@@ -34,9 +21,7 @@ def thread_process(
         (table, req, index) = request
         with already_lock[table]:
             if not already[table]:
-                print(
-                    f"Processo {id + 1}: resolvendo quebra-cabeças {int((start/10)+table) + 1}"
-                )
+                print(f"Processo {id + 1}: resolvendo quebra-cabeças {int((start/10)+table) + 1}")
                 already[table] = True
         response = ""
         valid = bool()
@@ -75,25 +60,10 @@ def process_worker(id, start, filename, tables_n, threads_n):
         threads_queue.put((-1, -1, -1))
 
     semaphores = [Semaphore(0) for _ in range(tables_n)]
-    threads = [
-        Thread(
-            target=thread_process,
-            args=(
-                id,
-                i,
-                start,
-                threads_queue,
-                errors,
-                tables,
-                len(tables),
-                semaphores,
-                lock,
-                already_lock,
-                already,
-            ),
-        )
-        for i in range(threads_n)
-    ]
+    threads = [Thread(target=thread_process,
+                      args=(id, i,start, threads_queue, errors, tables, len(tables), semaphores, lock, already_lock, already))
+               for i in
+               range(threads_n)]
     for thread in threads:
         thread.start()
     for table in range(len(tables)):
@@ -106,11 +76,7 @@ def process_worker(id, start, filename, tables_n, threads_n):
             print(f"Processo {id + 1}: 0 erros encontrados.")
         else:
             print(f"Processo {id + 1}: {total_errors} erros encontrados (", end="")
-            final_append = [
-                f"T{i + 1}: {', '.join(e)}"
-                for i, e in enumerate(errors[table])
-                if len(e) > 0
-            ]
+            final_append = [f"T{i + 1}: {', '.join(e)}" for i, e in enumerate(errors[table]) if len(e) > 0]
             print("; ".join(final_append) + ")")
         if table != tables_n - 1:
             clear_errors(errors)
@@ -118,12 +84,10 @@ def process_worker(id, start, filename, tables_n, threads_n):
 
     for thread in threads:
         thread.join()
-
-
 if __name__ == "__main__":
-    start_time = time.time()
+    # start_time = time.time()
     N_LINES = 0
-    with open(sys.argv[1], "r") as file:
+    with open(sys.argv[1], 'r') as file:
         N_LINES = len(file.readlines())
     NUM_PROCESS = int(sys.argv[2])
     THREADS_PER_PROCESS = int(sys.argv[3])
@@ -138,14 +102,10 @@ if __name__ == "__main__":
     processes = []
     for i in range(NUM_PROCESS):
         processes.append(
-            Process(
-                target=process_worker,
-                args=(i, next_start, sys.argv[1], dist[i], THREADS_PER_PROCESS),
-            )
-        )
+            Process(target=process_worker, args=(i, next_start, sys.argv[1], dist[i], THREADS_PER_PROCESS)))
         next_start += dist[i] * 10
     for p in processes:
         p.start()
     for p in processes:
         p.join()
-    print(f"Tempo de execução: {time.time() - start_time} segundos.")
+    # print(f"Tempo de execução: {time.time() - start_time} segundos.")
